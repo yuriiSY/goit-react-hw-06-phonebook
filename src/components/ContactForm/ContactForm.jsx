@@ -1,4 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { addContact } from '../../redux/contacts/contacts-slice';
+import { getFilteredContacts } from '../../redux/contacts/contacts-selectors';
 
 import { nanoid } from 'nanoid';
 import css from './contactForm.module.css';
@@ -8,7 +11,10 @@ const INITIAL_STATE = {
   phone: '',
 };
 
-const ContactForm = ({ onSubmit }) => {
+const ContactForm = () => {
+  const contacts = useSelector(getFilteredContacts);
+  const dispatch = useDispatch();
+
   const [constact, setContact] = useState({
     ...INITIAL_STATE,
   });
@@ -27,9 +33,26 @@ const ContactForm = ({ onSubmit }) => {
     });
   };
 
-  const handleSubmit = e => {
+  const isDuplicate = ({ name }) => {
+    const nameNormalized = name.toLowerCase();
+
+    const duplicate = contacts.find(item => {
+      const currentNameNormalize = item.name.toLowerCase();
+      return currentNameNormalize === nameNormalized;
+    });
+
+    return Boolean(duplicate);
+  };
+
+  const onAddContact = e => {
     e.preventDefault();
-    onSubmit({ ...constact });
+
+    if (isDuplicate(constact)) {
+      return alert(`${constact.name} is already in contacts`);
+    }
+
+    const action = addContact(constact);
+    dispatch(action);
     reset();
   };
 
@@ -43,7 +66,7 @@ const ContactForm = ({ onSubmit }) => {
   const phoneId = nanoid();
 
   return (
-    <form className={css.form} onSubmit={handleSubmit}>
+    <form className={css.form} onSubmit={onAddContact}>
       <div className={css.formGroup}>
         <label htmlFor={nameId}>Name</label>
         <input
